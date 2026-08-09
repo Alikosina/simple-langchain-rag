@@ -1,8 +1,20 @@
 from langchain_ollama.llms import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 from vector import retriever
+from langfuse.langchain import CallbackHandler
+from langfuse import get_client
+from dotenv import load_dotenv
+import os
 
-model = OllamaLLM(model="llama3.2")
+load_dotenv()
+
+langfuse_handler = CallbackHandler()
+
+model = OllamaLLM(
+    model="llama3.2", 
+    base_url=os.getenv("OLLAMA_HOST"),
+    callbacks=[langfuse_handler]
+)
 
 template = """
 You are an exeprt in answering questions about a pizza restaurant
@@ -20,7 +32,9 @@ while True:
     print("\n\n")
     if question == "q":
         break
+        
     
     reviews = retriever.invoke(question)
     result = chain.invoke({"reviews": reviews, "question": question})
     print(result)
+    get_client().flush()
